@@ -53,6 +53,14 @@ std::string run_inference(const std::string& prompt, int max_tokens) {
     return output;
 }
 
+int count_tokens(const std::string& text) {
+    const llama_vocab* vocab = llama_model_get_vocab(model);
+    std::vector<llama_token> tokens(text.size() + 32);
+    int n = llama_tokenize(vocab, text.c_str(), text.size(),
+                           tokens.data(), tokens.size(), false, false);
+    return n < 0 ? 0 : n;
+}
+
 std::string generate_file_wiki(const std::string& file_content, const std::string& file_path) {
     std::string prompt = "你是一个代码文档专家。为以下文件生成 Wiki 条目（Markdown 格式）：\n文件：" + file_path + "\n内容：\n" + file_content + "\n\n输出：\n";
     return run_inference(prompt, 1024);
