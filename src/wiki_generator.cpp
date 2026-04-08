@@ -14,8 +14,10 @@ void init_llama(const std::string& model_path) {
     if (!model) { fprintf(stderr, "Failed to load model\n"); exit(1); }
     auto ctx_params = llama_context_default_params();
     ctx_params.n_ctx = 8192;
+    ctx_params.n_batch = 8192;
     ctx_params.n_threads = 8;
     ctx = llama_init_from_model(model, ctx_params);
+    if (!ctx) { fprintf(stderr, "Failed to create context\n"); exit(1); }
 }
 
 void free_llama() {
@@ -30,7 +32,20 @@ std::string run_inference(const std::string& prompt, int max_tokens) {
     std::vector<llama_token> tokens(prompt.size() + 32);
     int n_tokens = llama_tokenize(vocab, prompt.c_str(), prompt.size(),
                                   tokens.data(), tokens.size(), true, false);
+
+    // Truncate to leave room for output
+    const int max_prompt_tokens = 8192 - max_tokens;
+    if (n_tokens > max_prompt_tokens) n_tokens = max_prompt_tokens;
     tokens.resize(n_tokens);
+
+    // Recreate context to reset KV cache between inferences
+    llama_free(ctx);
+    auto ctx_params = llama_context_default_params();
+    ctx_params.n_ctx = 8192;
+    ctx_params.n_batch = 8192;
+    ctx_params.n_threads = 8;
+    ctx = llama_init_from_model(model, ctx_params);
+    if (!ctx) return "";
 
     auto batch = llama_batch_get_one(tokens.data(), tokens.size());
     if (llama_decode(ctx, batch)) { return ""; }
