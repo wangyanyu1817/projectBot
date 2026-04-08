@@ -1,4 +1,4 @@
 #pragma once
 #include <string>
 
-std::string get_relevant_context(const std::string& query);
+std::string get_relevant_context(const std::string& query, const std::string& project_dir);

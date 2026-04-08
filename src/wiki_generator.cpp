@@ -52,7 +52,8 @@ std::string run_inference(const std::string& prompt, int max_tokens) {
 
     auto smpl_params = llama_sampler_chain_default_params();
     llama_sampler* smpl = llama_sampler_chain_init(smpl_params);
-    llama_sampler_chain_add(smpl, llama_sampler_init_greedy());
+    llama_sampler_chain_add(smpl, llama_sampler_init_temp(0.7f));
+    llama_sampler_chain_add(smpl, llama_sampler_init_dist(42));
 
     std::string output;
     for (int i = 0; i < max_tokens; ++i) {

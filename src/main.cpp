@@ -38,6 +38,7 @@ int main(int argc, char* argv[]) {
         std::string content = read_file(f.path);
         if (content.empty()) continue;
         std::string wiki = generate_file_wiki(content, f.relative_path);
+        std::filesystem::create_directories(std::filesystem::path(out_path).parent_path());
         write_file(out_path, wiki);
         std::cout << "Generated: " << out_path << std::endl;
     }
@@ -45,8 +46,8 @@ int main(int argc, char* argv[]) {
     build_index(project_dir, files);
 
     if (!query.empty()) {
-        std::string context = get_relevant_context(query);
-        std::string final_prompt = "根据以下项目信息回答问题：\n" + context + "\n问题：" + query + "\n回答：";
+        std::string context = get_relevant_context(query, project_dir);
+        std::string final_prompt = "<start_of_turn>user\n你是一个代码助手。根据以下项目文档，详细回答问题，包括步骤说明和代码示例。\n\n文档：\n" + context + "\n问题：" + query + "<end_of_turn>\n<start_of_turn>model\n";
         std::string answer = run_inference(final_prompt, 512);
         std::cout << "\n=== 回答 ===\n" << answer << std::endl;
     }

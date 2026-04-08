@@ -53,8 +53,8 @@ static double score_entry(const std::string& content, const std::string& path,
     return score;
 }
 
-std::string get_relevant_context(const std::string& query) {
-    std::string wiki_dir = ".wiki/details";
+std::string get_relevant_context(const std::string& query, const std::string& project_dir) {
+    std::string wiki_dir = project_dir + "/.wiki/details";
     if (!std::filesystem::exists(wiki_dir)) return "";
 
     auto keywords = split_words(query);
