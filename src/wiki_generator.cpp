@@ -73,6 +73,15 @@ std::string run_inference(const std::string& prompt, int max_tokens) {
         while ((pos = output.find(s)) != std::string::npos)
             output.erase(pos, s.size());
     }
+    // 去掉模型用 ```markdown ... ``` 包裹整个输出的情况
+    for (auto& fence : {"```markdown\n", "```md\n"}) {
+        if (output.rfind(fence, 0) == 0) {
+            output.erase(0, std::string(fence).size());
+            auto end = output.rfind("\n```");
+            if (end != std::string::npos) output.erase(end);
+            break;
+        }
+    }
     return output;
 }
 
