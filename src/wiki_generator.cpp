@@ -66,6 +66,13 @@ std::string run_inference(const std::string& prompt, int max_tokens) {
         if (llama_decode(ctx, batch_next)) break;
     }
     llama_sampler_free(smpl);
+    // 过滤模型可能输出的字面 special token 字符串
+    for (auto& tok : {"<eos>", "<bos>", "<end_of_turn>", "<start_of_turn>"}) {
+        std::string s = tok;
+        size_t pos;
+        while ((pos = output.find(s)) != std::string::npos)
+            output.erase(pos, s.size());
+    }
     return output;
 }
 
@@ -78,11 +85,11 @@ int count_tokens(const std::string& text) {
 }
 
 std::string generate_file_wiki(const std::string& file_content, const std::string& file_path) {
-    std::string prompt = "你是一个代码文档专家。为以下文件生成 Wiki 条目（Markdown 格式）：\n文件：" + file_path + "\n内容：\n" + file_content + "\n\n输出：\n";
+    std::string prompt = "<start_of_turn>user\n你是一个代码文档专家。为以下文件生成 Wiki 条目（Markdown 格式）：\n文件：" + file_path + "\n内容：\n" + file_content + "<end_of_turn>\n<start_of_turn>model\n";
     return run_inference(prompt, 1024);
 }
 
 std::string generate_module_summary(const std::string& module_code) {
-    std::string prompt = "用一句话总结以下代码模块的功能：\n" + module_code + "\n一句话总结：";
-    return run_inference(prompt, 50);
+    std::string prompt = "<start_of_turn>user\n用一句话总结以下代码模块的功能，只输出一句话，不要多余内容：\n" + module_code + "<end_of_turn>\n<start_of_turn>model\n";
+    return run_inference(prompt, 80);
 }
