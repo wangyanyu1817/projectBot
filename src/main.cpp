@@ -9,7 +9,7 @@
 
 int main(int argc, char* argv[]) {
     if (argc < 2) {
-        std::cerr << "Usage: project_bot <project_dir> [--model <model_path>] [--query <question>]\n";
+        std::cerr << "Usage: project_bot <project_dir> [--model <path>] [--query <question>] [--verbose]\n";
         return 1;
     }
 
@@ -18,9 +18,12 @@ int main(int argc, char* argv[]) {
 
     // 解析可选参数
     std::string query;
-    for (int i = 2; i < argc - 1; ++i) {
-        if (std::string(argv[i]) == "--model") model_path = argv[++i];
-        else if (std::string(argv[i]) == "--query") query = argv[++i];
+    bool verbose = false;
+    for (int i = 2; i < argc; ++i) {
+        std::string arg = argv[i];
+        if (arg == "--model" && i + 1 < argc) model_path = argv[++i];
+        else if (arg == "--query" && i + 1 < argc) query = argv[++i];
+        else if (arg == "--verbose") verbose = true;
     }
 
     std::vector<std::string> extensions = {".py", ".md", ".cpp", ".h", ".txt"};
@@ -47,7 +50,15 @@ int main(int argc, char* argv[]) {
 
     if (!query.empty()) {
         std::string context = get_relevant_context(query, project_dir);
+        if (verbose) {
+            std::cerr << "\n[verbose] context length: " << context.size() << " chars\n";
+            std::cerr << "[verbose] context preview:\n" << context.substr(0, 500) << "\n...\n";
+        }
         std::string final_prompt = "<start_of_turn>user\n你是一个代码助手。根据以下项目文档，详细回答问题，包括步骤说明和代码示例。\n\n文档：\n" + context + "\n问题：" + query + "<end_of_turn>\n<start_of_turn>model\n";
+        if (verbose) {
+            std::cerr << "[verbose] prompt tokens (approx): " << final_prompt.size() / 3 << "\n";
+            std::cerr << "[verbose] full prompt:\n" << final_prompt << "\n[verbose] ---\n";
+        }
         std::string answer = run_inference(final_prompt, 512);
         std::cout << "\n=== 回答 ===\n" << answer << std::endl;
     }
